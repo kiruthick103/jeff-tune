@@ -1,3 +1,6 @@
+# Render Blueprint - deploy at https://dashboard.render.com
+# Connect repo, then add env vars (OPENROUTER_API_KEY required; DATABASE_URL optional for persistence)
+
 services:
   - type: web
     name: jeff-tune-1-pro
@@ -9,3 +12,4 @@ services:
         sync: false
       - key: NODE_ENV
         value: production
+      # Add DATABASE_URL from a Render PostgreSQL database for chat persistence (optional)

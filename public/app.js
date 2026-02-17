@@ -1,6 +1,6 @@
 /**
  * Jeff Tune-1 Pro - Frontend application
- * Chat UI, markdown rendering, copy, model selector, history.
+ * Chat UI, markdown rendering, copy, model selector, DB-backed chat history.
  */
 
 (function () {
@@ -94,7 +94,6 @@
     return out.join('');
   }
 
-  // --- DOM helpers ---
   function hideWelcome() {
     if (welcomeEl) welcomeEl.hidden = true;
   }
@@ -108,7 +107,7 @@
     if (wrap) wrap.scrollTop = wrap.scrollHeight;
   }
 
-  function addMessage(role, content, isUser = false) {
+  function addMessage(role, content, isUser) {
     hideWelcome();
     const div = document.createElement('div');
     div.className = 'msg msg-' + role;
@@ -137,8 +136,7 @@
     const copyBtn = bubble.querySelector('[data-copy]');
     if (copyBtn) {
       copyBtn.addEventListener('click', function () {
-        const text = content;
-        navigator.clipboard.writeText(text).then(function () {
+        navigator.clipboard.writeText(content).then(function () {
           copyBtn.textContent = 'Copied!';
           setTimeout(function () { copyBtn.textContent = 'Copy'; }, 2000);
         });
@@ -152,7 +150,6 @@
     btnSend.disabled = disabled;
   }
 
-  // --- API ---
   function fetchModels() {
     fetch('/api/models')
       .then(function (r) { return r.json(); })
@@ -168,19 +165,19 @@
       .catch(function () {});
   }
 
-  function sendToApi(message, history, model) {
+  function sendToApi(message, history, model, sessionId) {
     return fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: message,
         history: history,
-        model: model || null
+        model: model || null,
+        session_id: sessionId || null
       })
     });
   }
 
-  // --- Chat logic ---
   function submitChat() {
     const text = (userInput.value || '').trim();
     if (!text) return;
@@ -198,7 +195,7 @@
 
     const historyForApi = conversation.slice(0, -1);
 
-    sendToApi(text, historyForApi, model)
+    sendToApi(text, historyForApi, model, currentSessionId)
       .then(function (r) {
         if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || r.statusText); });
         return r.json();
@@ -207,9 +204,10 @@
         showTyping(false);
         setSendDisabled(false);
         const reply = data.reply || '';
+        currentSessionId = data.session_id || currentSessionId;
         conversation.push({ role: 'assistant', content: reply });
         addMessage('assistant', reply);
-        saveCurrentSession();
+        loadSessions();
       })
       .catch(function (err) {
         showTyping(false);
@@ -219,17 +217,14 @@
       });
   }
 
-  function saveCurrentSession() {
-    if (!currentSessionId) {
-      currentSessionId = 's' + Date.now();
-      chatSessions.push({ id: currentSessionId, title: conversation[0].content.slice(0, 40) || 'New chat', messages: [] });
-    }
-    const session = chatSessions.find(function (s) { return s.id === currentSessionId; });
-    if (session) {
-      session.messages = conversation.slice();
-      session.title = (conversation[0] && conversation[0].content) ? conversation[0].content.slice(0, 40) : 'New chat';
-      renderChatHistory();
-    }
+  function loadSessions() {
+    fetch('/api/sessions')
+      .then(function (r) { return r.json(); })
+      .then(function (sessions) {
+        chatSessions = sessions;
+        renderChatHistory();
+      })
+      .catch(function () { renderChatHistory(); });
   }
 
   function newChat() {
@@ -239,10 +234,11 @@
     messagesEl.querySelectorAll('.msg').forEach(function (n) { n.remove(); });
     document.querySelectorAll('.chat-item').forEach(function (n) { n.classList.remove('active'); });
     userInput.focus();
+    loadSessions();
   }
 
   function renderChatHistory() {
-    const list = chatSessions.slice().reverse();
+    const list = chatSessions || [];
     if (list.length === 0) {
       chatHistory.innerHTML = '<p class="sidebar-placeholder">No chats yet</p>';
       return;
@@ -263,20 +259,27 @@
   }
 
   function loadSession(id) {
-    const session = chatSessions.find(function (s) { return s.id === id; });
-    if (!session) return;
-    currentSessionId = id;
-    conversation = (session.messages || []).slice();
-    if (welcomeEl) welcomeEl.hidden = conversation.length > 0;
-    messagesEl.querySelectorAll('.msg').forEach(function (n) { n.remove(); });
-    conversation.forEach(function (m) {
-      addMessage(m.role, m.content, m.role === 'user');
-    });
-    renderChatHistory();
-    scrollToBottom();
+    fetch('/api/sessions/' + encodeURIComponent(id))
+      .then(function (r) {
+        if (!r.ok) throw new Error('Failed to load');
+        return r.json();
+      })
+      .then(function (msgs) {
+        currentSessionId = id;
+        conversation = msgs.map(function (m) { return { role: m.role, content: m.content }; });
+        if (welcomeEl) welcomeEl.hidden = conversation.length > 0;
+        messagesEl.querySelectorAll('.msg').forEach(function (n) { n.remove(); });
+        conversation.forEach(function (m) {
+          addMessage(m.role, m.content, m.role === 'user');
+        });
+        renderChatHistory();
+        scrollToBottom();
+      })
+      .catch(function () {
+        chatHistory.innerHTML = '<p class="sidebar-placeholder">Failed to load</p>';
+      });
   }
 
-  // --- Events ---
   if (chatForm) {
     chatForm.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -306,7 +309,6 @@
     });
   }
 
-  // Overlay for mobile sidebar close
   if (sidebar) {
     const overlay = document.createElement('div');
     overlay.className = 'sidebar-overlay';
@@ -316,5 +318,5 @@
   }
 
   fetchModels();
-  renderChatHistory();
+  loadSessions();
 })();

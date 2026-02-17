@@ -4,12 +4,14 @@
 
 const SYSTEM_PROMPT = 'You are Jeff Tune-1 Pro, an advanced AI assistant designed to provide accurate, structured, and helpful responses. Always prioritize correctness and clarity.';
 
-// Model categories for smart routing
+// Default: OpenAI GPT-4o-mini (uses credits; new OpenRouter accounts get $1 free)
+// Fallbacks: GPT-3.5-turbo, then free models
 const MODELS = {
   general: 'openai/gpt-4o-mini',
-  coding: 'anthropic/claude-3.5-sonnet',
-  creative: 'google/gemini-2.0-flash-001',
+  coding: 'openai/gpt-4o-mini',
+  creative: 'openai/gpt-4o-mini',
 };
+const FALLBACK_MODELS = ['openai/gpt-3.5-turbo', 'google/gemma-3-4b-it:free', 'qwen/qwen3-4b:free'];
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const REQUEST_TIMEOUT_MS = 60000;
@@ -61,24 +63,53 @@ async function chatWithRetry(options, retries = MAX_RETRIES) {
 
     if (!res.ok) {
       const errText = await res.text();
-      let err = new Error(errText || `OpenRouter error: ${res.status}`);
+      let message = errText;
+      try {
+        const data = JSON.parse(errText);
+        const msg = data.error?.message || data.error?.error?.message || data.message;
+        if (msg) message = msg;
+      } catch (_) {}
+      if (res.status === 401) {
+        message = 'Invalid OpenRouter API key. Check or create a key at https://openrouter.ai/keys and update .env';
+      }
+      const err = new Error(message);
       err.status = res.status;
       throw err;
     }
 
     const data = await res.json();
+    const errMsg = data.error?.message || data.error?.error?.message;
+    if (errMsg) {
+      const err = new Error(errMsg);
+      err.status = data.error?.code || 502;
+      throw err;
+    }
     const choice = data.choices && data.choices[0];
-    if (!choice || !choice.message || typeof choice.message.content !== 'string') {
+    if (!choice || !choice.message) {
       throw new Error('Invalid response from OpenRouter');
     }
-    return choice.message.content;
+    let content = choice.message.content;
+    if (content == null) content = '';
+    if (Array.isArray(content)) {
+      content = content.map(c => (c && c.text) || (typeof c === 'string' ? c : '')).join('');
+    }
+    if (typeof content !== 'string') {
+      content = String(content);
+    }
+    return content;
   } catch (err) {
     if (err.name === 'AbortError') {
       throw new Error('Request timed out. Please try again.');
     }
-    if (retries > 0 && (err.status === 429 || err.status >= 500)) {
-      await new Promise(r => setTimeout(r, 1000));
-      return chatWithRetry(options, retries - 1);
+    const isRetryable = retries > 0 && (
+      err.status === 429 || err.status >= 500 ||
+      /provider|endpoint|not found/i.test(err.message)
+    );
+    if (isRetryable) {
+      const fallbackIdx = MAX_RETRIES - retries;
+      const fallbackModel = FALLBACK_MODELS[fallbackIdx % FALLBACK_MODELS.length];
+      await new Promise(r => setTimeout(r, 1500));
+      return chatWithRetry({ ...options, model: fallbackModel }, retries - 1);
     }
     throw err;
   }

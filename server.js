@@ -1,22 +1,21 @@
 /**
  * Jeff Tune-1 Pro - Express server
- * Serves static frontend and /api/chat for OpenRouter AI.
+ * Serves static frontend, /api/chat, and DB-backed sessions.
  */
 
-require('dotenv').config();
-const express = require('express');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const chatRouter = require('./routes/chat');
+const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust proxy for rate limiting behind Render/nginx
 app.set('trust proxy', 1);
 
-// Rate limiting: 30 requests per minute per IP
 const limiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
@@ -30,14 +29,23 @@ app.use(cors({ origin: true }));
 app.use(express.json({ limit: '256kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API routes
 app.use('/api', chatRouter);
 
-// SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Jeff Tune-1 Pro running at http://localhost:${PORT}`);
+async function start() {
+  const ok = await db.initDb();
+  if (!ok) {
+    console.warn('Database init failed. Chat history may not persist. Set DATABASE_URL.');
+  }
+  app.listen(PORT, () => {
+    console.log(`Jeff Tune-1 Pro running at http://localhost:${PORT}`);
+  });
+}
+
+start().catch(err => {
+  console.error('Startup error:', err);
+  process.exit(1);
 });
