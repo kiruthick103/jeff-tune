@@ -23,6 +23,10 @@
   let chatSessions = [];
   let currentSessionId = null;
 
+  // Detect if running on Netlify
+  const isNetlify = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  const apiBase = isNetlify ? '/.netlify/functions' : '/api';
+
   // --- Markdown (simple, safe) ---
   function escapeHtml(str) {
     const div = document.createElement('div');
@@ -151,7 +155,7 @@
   }
 
   function fetchModels() {
-    fetch('/api/models')
+    fetch(apiBase + '/models')
       .then(function (r) { return r.json(); })
       .then(function (data) {
         modelSelect.innerHTML = '<option value="">Auto (smart routing)</option>';
@@ -166,7 +170,7 @@
   }
 
   function sendToApi(message, history, model, sessionId) {
-    return fetch('/api/chat', {
+    return fetch(apiBase + '/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -218,7 +222,7 @@
   }
 
   function loadSessions() {
-    fetch('/api/sessions')
+    fetch(apiBase + '/sessions')
       .then(function (r) { return r.json(); })
       .then(function (sessions) {
         chatSessions = sessions;
@@ -259,7 +263,7 @@
   }
 
   function loadSession(id) {
-    fetch('/api/sessions/' + encodeURIComponent(id))
+    fetch(apiBase + '/sessions/' + encodeURIComponent(id))
       .then(function (r) {
         if (!r.ok) throw new Error('Failed to load');
         return r.json();
