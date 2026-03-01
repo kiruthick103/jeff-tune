@@ -1,56 +1,55 @@
-# Jeff Tune Pro 🤖
+# Jeff Tune Pro - AI Image SaaS Monorepo
 
-A production-ready AI SaaS chatbot built with Next.js 14, OpenRouter, and Vercel.
+Welcome to the production-ready upgrade of Jeff Tune Pro. The project has been refactored into a high-performance monorepo featuring a FastAPI backend and a React frontend.
 
-## Features
+## 🚀 Architecture
+- **Frontend**: React + Vite + Tailwind CSS (deployed on Vercel).
+- **Backend**: FastAPI + SQLAlchemy + PostgreSQL (Docker-ready).
+- **AI**: Integrated HuggingFace Router for vision and reasoning tasks.
+- **Persistence**: Relational database for Users, Images, and Request logs.
 
-- 🤖 **Multi-Model AI Routing** — Auto-routes to GPT-4o, Claude 3.5, or Gemini based on task type
-- ⚡ **Streaming Responses** — Real-time streaming via Vercel AI SDK edge functions
-- 🕵️ **Agent Mode** — Tool-calling AI agent with calculator, datetime, and extensible tools
-- 👨‍💻 **Developer Mode** — Shows model selected, latency, and token usage per message
-- 🌙 **Dark / Light Mode** — Smooth theme switching with next-themes
-- 🔒 **Secure API** — Server-side key management, Zod validation, rate limiting
-- 📱 **Responsive Design** — Works beautifully on mobile and desktop
-- 🚀 **Deployed on Vercel** — Edge-optimized API routes for global performance
-
-## Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **AI SDK**: Vercel AI SDK + OpenRouter
-- **UI**: shadcn/ui + Tailwind CSS
-- **Auth & DB**: Supabase (optional)
-- **Deployment**: Vercel
-- **Analytics**: Vercel Analytics
-
-## Getting Started
-
-```bash
-# Install dependencies
-npm install
-
-# Create .env.local and fill in values
-cp .env.local.example .env.local
-
-# Run locally
-npm run dev
+## 📂 Project Structure
+```text
+jeff-tune-pro/
+├── backend/             # FastAPI Backend Service
+│   ├── app/             # API logic, Auth, DB, and AI Services
+│   ├── Dockerfile       # Production container build
+│   └── README.md        # Backend specific documentation
+├── frontend/            # React Frontend Application
+│   ├── src/             # UI Components and state management
+│   ├── Dockerfile       # Nginx-based frontend container
+│   └── README.md        # Frontend documentation
+├── docker-compose.yml   # Full-stack orchestration (DB + API + UI)
+├── vercel.json          # Deployment configuration for the frontend
+└── package.json         # Root monorepo workspace management
 ```
 
-## Environment Variables
+## 🛠️ Getting Started
 
-```
-OPENROUTER_API_KEY=your_openrouter_api_key
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url       # optional
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key     # optional
-NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
-```
+### Local Development (with Docker)
+1. Ensure you have Docker and Docker Compose installed.
+2. Create a `.env` file in the root directory (see `.env.example`).
+3. Run the entire stack:
+   ```bash
+   docker-compose up --build
+   ```
+4. Access the UI at `http://localhost:3000` and the API docs at `http://localhost:8000/docs`.
 
-## Deployment
+### Local Development (without Docker)
+1. **Backend**:
+   ```bash
+   cd backend && pip install -r requirements.txt
+   uvicorn app.main:app --reload
+   ```
+2. **Frontend**:
+   ```bash
+   cd frontend && npm install && npm run dev
+   ```
 
-1. Push to GitHub
-2. Import project on [vercel.com](https://vercel.com)
-3. Add environment variables in Vercel dashboard
-4. Deploy!
+## ☁️ Deployment
+- **GitHub**: Integrated via GitHub Actions (if configured) or linked to Vercel.
+- **Vercel**: The `frontend/` directory is automatically deployed using the provided `vercel.json`.
+- **Backend**: Suitable for deployment on Docker-compatible hosts like Render, Railway, or Fly.io.
 
-## License
-
-MIT
+---
+Built with ❤️ by Jeff AI Team.
