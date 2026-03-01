@@ -35,17 +35,18 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-async function start() {
-  const ok = await db.initDb();
-  if (!ok) {
-    console.warn('Database init failed. Chat history may not persist. Set DATABASE_URL.');
-  }
+// Initialize DB
+db.initDb().catch(err => {
+  console.warn('Database init failed:', err.message);
+});
+
+// Start server locally (skip on Vercel)
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`Jeff Tune-1 Pro running at http://localhost:${PORT}`);
   });
 }
 
-start().catch(err => {
-  console.error('Startup error:', err);
-  process.exit(1);
-});
+module.exports = app;
+
+

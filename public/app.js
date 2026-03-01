@@ -23,12 +23,10 @@
   let chatSessions = [];
   let currentSessionId = null;
 
-  // Detect environment
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const apiBase = (isLocal || window.location.hostname.includes('vercel.app')) ? '/api' : '/.netlify/functions';
-
+  const apiBase = '/api';
 
   // --- Markdown (simple, safe) ---
+
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
@@ -201,8 +199,20 @@
     const historyForApi = conversation.slice(0, -1);
 
     sendToApi(text, historyForApi, model, currentSessionId)
-      .then(function (r) {
-        if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || r.statusText); });
+      .then(async function (r) {
+        if (!r.ok) {
+          let msg = r.statusText;
+          try {
+            const d = await r.json();
+            msg = d.error || msg;
+          } catch (_) {
+            try {
+              const txt = await r.text();
+              if (txt && txt.length < 100) msg = txt;
+            } catch (__) { }
+          }
+          throw new Error(msg);
+        }
         return r.json();
       })
       .then(function (data) {
@@ -217,9 +227,11 @@
       .catch(function (err) {
         showTyping(false);
         setSendDisabled(false);
-        conversation.push({ role: 'assistant', content: 'Sorry, something went wrong. ' + (err.message || 'Please try again.') });
-        addMessage('assistant', 'Sorry, something went wrong. ' + (err.message || 'Please try again.'));
+        const errorMsg = 'Sorry, something went wrong. ' + (err.message || 'Please try again.');
+        conversation.push({ role: 'assistant', content: errorMsg });
+        addMessage('assistant', errorMsg);
       });
+
   }
 
   function loadSessions() {
