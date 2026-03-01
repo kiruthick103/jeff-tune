@@ -1,48 +1,56 @@
-# Jeff Tune-1 Pro
+# Jeff Tune Pro 🤖
 
-Production-ready AI chatbot with glass UI, OpenRouter multi-model support, PostgreSQL chat persistence, and Docker.
+A production-ready AI SaaS chatbot built with Next.js 14, OpenRouter, and Vercel.
 
 ## Features
 
-- **Glass UI:** Glass panels, no solid backgrounds, backdrop blur
-- **Chat persistence:** PostgreSQL stores sessions and messages
-- **Docker:** Run with `docker-compose up`
+- 🤖 **Multi-Model AI Routing** — Auto-routes to GPT-4o, Claude 3.5, or Gemini based on task type
+- ⚡ **Streaming Responses** — Real-time streaming via Vercel AI SDK edge functions
+- 🕵️ **Agent Mode** — Tool-calling AI agent with calculator, datetime, and extensible tools
+- 👨‍💻 **Developer Mode** — Shows model selected, latency, and token usage per message
+- 🌙 **Dark / Light Mode** — Smooth theme switching with next-themes
+- 🔒 **Secure API** — Server-side key management, Zod validation, rate limiting
+- 📱 **Responsive Design** — Works beautifully on mobile and desktop
+- 🚀 **Deployed on Vercel** — Edge-optimized API routes for global performance
 
-## Quick start (Docker)
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **AI SDK**: Vercel AI SDK + OpenRouter
+- **UI**: shadcn/ui + Tailwind CSS
+- **Auth & DB**: Supabase (optional)
+- **Deployment**: Vercel
+- **Analytics**: Vercel Analytics
+
+## Getting Started
 
 ```bash
-cd jeff-tune-1-pro
-# Add your key to .env: OPENROUTER_API_KEY=sk-or-v1-...
-docker-compose up -d
-# Open http://localhost:3000
+# Install dependencies
+npm install
+
+# Create .env.local and fill in values
+cp .env.local.example .env.local
+
+# Run locally
+npm run dev
 ```
 
-## Local run (without Docker)
+## Environment Variables
 
-1. **PostgreSQL** running on localhost:5432, database `jeff_chat`, user `postgres` / password `postgres`
+```
+OPENROUTER_API_KEY=your_openrouter_api_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url       # optional
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key     # optional
+NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
+```
 
-2. **Install and configure:**
-   ```bash
-   npm install
-   cp .env.example .env
-   # Edit .env: OPENROUTER_API_KEY, DATABASE_URL
-   ```
+## Deployment
 
-3. **Start:**
-   ```bash
-   npm start
-   ```
-   Open http://localhost:3000
+1. Push to GitHub
+2. Import project on [vercel.com](https://vercel.com)
+3. Add environment variables in Vercel dashboard
+4. Deploy!
 
-## Environment
+## License
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| OPENROUTER_API_KEY | Yes | From [openrouter.ai/keys](https://openrouter.ai/keys) |
-| DATABASE_URL | Yes | `postgresql://user:pass@host:5432/jeff_chat` |
-| PORT | No | Default 3000 |
-
-## Docker
-
-- **docker-compose up** – Starts app + PostgreSQL, creates schema
-- **docker-compose down** – Stops services (data kept in `pgdata` volume)
+MIT

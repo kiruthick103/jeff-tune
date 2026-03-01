@@ -1,4 +1,21 @@
-node_modules/
-.env
+# Dependencies
+node_modules
+
+# Next.js
+.next
+out
+
+# Env
+.env.local
+.env*.local
+
+# Misc
 .DS_Store
+*.pem
+.git
+
+# Logs
 *.log
+
+# Vercel
+.vercel
