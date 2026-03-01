@@ -23,9 +23,10 @@
   let chatSessions = [];
   let currentSessionId = null;
 
-  // Detect if running on Netlify
-  const isNetlify = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-  const apiBase = isNetlify ? '/.netlify/functions' : '/api';
+  // Detect environment
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const apiBase = (isLocal || window.location.hostname.includes('vercel.app')) ? '/api' : '/.netlify/functions';
+
 
   // --- Markdown (simple, safe) ---
   function escapeHtml(str) {
@@ -166,7 +167,7 @@
           modelSelect.appendChild(o);
         });
       })
-      .catch(function () {});
+      .catch(function () { });
   }
 
   function sendToApi(message, history, model, sessionId) {
