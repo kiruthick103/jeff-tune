@@ -8,4 +8,14 @@ if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
 fi
 
 echo "Auto push: origin/$branch"
-git push origin "$branch"
+git push origin "$branch" || exit 0
+
+# Auto-deploy only for main branch.
+if [ "$branch" = "main" ]; then
+  if command -v vercel >/dev/null 2>&1; then
+    echo "Auto deploy: vercel --prod"
+    vercel deploy --prod --yes
+  else
+    echo "Auto deploy skipped: vercel CLI not found."
+  fi
+fi
