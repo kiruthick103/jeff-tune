@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { AVAILABLE_MODELS } from '@/lib/ai/models';
-import { Send, Loader2, Bot, User, Copy, Check, RotateCcw, Zap, Code, Sun, Moon, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Send, Loader2, Bot, User, Copy, Check, RotateCcw, Zap, Code, Sun, Moon, ChevronDown, ChevronUp, AlertTriangle, Flower2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +18,7 @@ function ThemeToggle() {
     const { theme, setTheme } = useTheme();
 
     return (
-        <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-8 w-8">
+        <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-8 w-8 text-primary">
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </Button>
@@ -32,7 +32,7 @@ function CopyButton({ text }: { text: string }) {
         <Button
             variant="ghost"
             size="icon"
-            className="mt-1 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+            className="mt-1 h-6 w-6 text-primary/70 opacity-0 transition-opacity group-hover:opacity-100 hover:text-primary"
             onClick={() => {
                 navigator.clipboard.writeText(text);
                 setCopied(true);
@@ -51,19 +51,19 @@ function MessageBubble({ msg }: { msg: Msg }) {
         <div className={cn('group flex gap-3 px-2 py-2', isUser ? 'flex-row-reverse' : 'flex-row')}>
             <div
                 className={cn(
-                    'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border text-sm',
-                    isUser ? 'bg-foreground text-background border-foreground' : 'bg-background text-foreground border-border',
+                    'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border text-sm shadow-sm',
+                    isUser ? 'border-primary/40 bg-primary text-primary-foreground' : 'border-primary/30 bg-card/80 text-primary',
                 )}
             >
                 {isUser ? <User size={14} /> : <Bot size={14} />}
             </div>
-            <div className={cn('flex max-w-[75%] flex-col', isUser ? 'items-end' : 'items-start')}>
+            <div className={cn('flex max-w-[78%] flex-col', isUser ? 'items-end' : 'items-start')}>
                 <div
                     className={cn(
-                        'whitespace-pre-wrap break-words rounded-2xl border px-4 py-3 text-sm leading-relaxed',
+                        'whitespace-pre-wrap break-words rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm',
                         isUser
-                            ? 'bg-foreground text-background border-foreground rounded-tr-sm'
-                            : 'bg-background text-foreground border-border rounded-tl-sm',
+                            ? 'rounded-tr-sm border-primary/45 bg-primary text-primary-foreground'
+                            : 'rounded-tl-sm border-primary/20 bg-card/90 text-foreground',
                     )}
                 >
                     {msg.content || (
@@ -186,184 +186,195 @@ export default function ChatPage() {
 
     return (
         <TooltipProvider>
-            <div className="flex h-screen flex-col bg-background">
-                <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-4 py-3">
-                    <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background">
-                            <Bot size={16} />
-                        </div>
-                        <span className="text-sm font-semibold">Jeff Tune Pro</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                        <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1">
-                            <Zap size={12} />
-                            <span className="text-xs text-muted-foreground">Agent</span>
-                            <Select value={selectedModel} onValueChange={setSelectedModel}>
-                                <SelectTrigger className="h-7 w-56 border-0 bg-transparent px-0 text-xs shadow-none focus:ring-0">
-                                    <SelectValue placeholder="Auto" />
-                                </SelectTrigger>
-                                <SelectContent align="end">
-                                    <SelectItem value={AUTO_MODEL_VALUE} className="text-xs">
-                                        Auto
-                                    </SelectItem>
-                                    {AVAILABLE_MODELS.map((model) => (
-                                        <SelectItem key={model.id} value={model.id} className="text-xs" disabled={model.isEnabled === false}>
-                                            {model.label}
-                                            {model.isEnabled === false ? ' (Local only)' : ''}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+            <div className="relative flex h-screen flex-col overflow-hidden">
+                <div className="pointer-events-none absolute -left-10 top-20 h-44 w-44 rounded-full bg-primary/15 blur-3xl" />
+                <div className="pointer-events-none absolute -right-10 bottom-24 h-48 w-48 rounded-full bg-accent/30 blur-3xl" />
 
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant={isAgentMode ? 'default' : 'ghost'}
-                                    size="sm"
-                                    className={cn('h-8 gap-1.5 rounded-full text-xs', isAgentMode && 'bg-foreground text-background hover:bg-foreground/90')}
-                                    onClick={() => setIsAgentMode((prev) => !prev)}
-                                >
-                                    <Zap size={12} /> Agent Mode
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Enable AI Agent Mode</TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant={isDevMode ? 'default' : 'ghost'}
-                                    size="sm"
-                                    className={cn('h-8 gap-1.5 rounded-full text-xs', isDevMode && 'bg-foreground text-background hover:bg-foreground/90')}
-                                    onClick={() => setIsDevMode((prev) => !prev)}
-                                >
-                                    <Code size={12} /> Dev
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Developer mode</TooltipContent>
-                        </Tooltip>
-
-                        <Button variant="ghost" size="sm" className="h-8 rounded-full text-xs" onClick={() => setShowSettings((prev) => !prev)}>
-                            Settings {showSettings ? <ChevronUp size={12} className="ml-1" /> : <ChevronDown size={12} className="ml-1" />}
-                        </Button>
-                        <ThemeToggle />
-                        {messages.length > 0 && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => {
-                                    setMessages([]);
-                                    abortRef.current?.abort();
-                                }}
-                            >
-                                <RotateCcw size={14} />
-                            </Button>
-                        )}
-                    </div>
-                </div>
-
-                {showSettings && (
-                    <div className="flex flex-shrink-0 flex-wrap items-center gap-4 border-b border-border bg-background px-4 py-3">
+                <div className="relative z-10 m-3 flex h-[calc(100vh-1.5rem)] flex-col rounded-3xl border border-primary/25 bg-card/70 shadow-[0_16px_38px_-28px_oklch(0.38_0.08_145_/_0.65)] backdrop-blur-md">
+                    <div className="flex flex-shrink-0 items-center justify-between border-b border-primary/20 px-4 py-3">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">Temp: {temperature}</span>
-                            <Slider min={0} max={2} step={0.1} value={[temperature]} onValueChange={([value]) => setTemperature(value)} className="w-28" />
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/35 bg-primary/10 text-primary">
+                                <Flower2 size={16} />
+                            </div>
+                            <span className="font-serif text-lg font-semibold tracking-tight text-foreground">Jeff Tune Garden</span>
                         </div>
-                        <div className="flex min-w-48 flex-1 items-center gap-2">
-                            <span className="whitespace-nowrap text-xs text-muted-foreground">System</span>
-                            <input
-                                type="text"
-                                value={systemPrompt}
-                                onChange={(e) => setSystemPrompt(e.target.value)}
-                                className="flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:border-foreground"
-                            />
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <div className="flex items-center gap-2 rounded-full border border-primary/25 bg-secondary/70 px-3 py-1">
+                                <Zap size={12} className="text-primary" />
+                                <span className="text-xs text-muted-foreground">Model</span>
+                                <Select value={selectedModel} onValueChange={setSelectedModel}>
+                                    <SelectTrigger className="h-7 w-56 border-0 bg-transparent px-0 text-xs shadow-none focus:ring-0">
+                                        <SelectValue placeholder="Auto" />
+                                    </SelectTrigger>
+                                    <SelectContent align="end">
+                                        <SelectItem value={AUTO_MODEL_VALUE} className="text-xs">
+                                            Auto
+                                        </SelectItem>
+                                        {AVAILABLE_MODELS.map((model) => (
+                                            <SelectItem key={model.id} value={model.id} className="text-xs" disabled={model.isEnabled === false}>
+                                                {model.label}
+                                                {model.isEnabled === false ? ' (Local only)' : ''}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant={isAgentMode ? 'default' : 'ghost'}
+                                        size="sm"
+                                        className={cn(
+                                            'h-8 gap-1.5 rounded-full text-xs',
+                                            isAgentMode && 'bg-primary text-primary-foreground hover:bg-primary/90',
+                                        )}
+                                        onClick={() => setIsAgentMode((prev) => !prev)}
+                                    >
+                                        <Zap size={12} /> Agent
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Enable AI Agent Mode</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant={isDevMode ? 'default' : 'ghost'}
+                                        size="sm"
+                                        className={cn(
+                                            'h-8 gap-1.5 rounded-full text-xs',
+                                            isDevMode && 'bg-primary text-primary-foreground hover:bg-primary/90',
+                                        )}
+                                        onClick={() => setIsDevMode((prev) => !prev)}
+                                    >
+                                        <Code size={12} /> Dev
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Developer mode</TooltipContent>
+                            </Tooltip>
+
+                            <Button variant="ghost" size="sm" className="h-8 rounded-full text-xs text-primary" onClick={() => setShowSettings((prev) => !prev)}>
+                                Settings {showSettings ? <ChevronUp size={12} className="ml-1" /> : <ChevronDown size={12} className="ml-1" />}
+                            </Button>
+                            <ThemeToggle />
+                            {messages.length > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-primary"
+                                    onClick={() => {
+                                        setMessages([]);
+                                        abortRef.current?.abort();
+                                    }}
+                                >
+                                    <RotateCcw size={14} />
+                                </Button>
+                            )}
                         </div>
                     </div>
-                )}
 
-                <div className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
-                    {messages.length === 0 && (
-                        <div className="flex h-full select-none flex-col items-center justify-center gap-4 py-12 text-center">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-background">
-                                <Bot size={32} />
+                    {showSettings && (
+                        <div className="flex flex-shrink-0 flex-wrap items-center gap-4 border-b border-primary/20 bg-secondary/55 px-4 py-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">Temp: {temperature}</span>
+                                <Slider min={0} max={2} step={0.1} value={[temperature]} onValueChange={([value]) => setTemperature(value)} className="w-28" />
                             </div>
-                            <div>
-                                <p className="text-lg font-semibold text-foreground">How can I help you?</p>
-                                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                                    Ask anything - code, write, reason, or use Agent Mode for complex tasks.
-                                </p>
-                            </div>
-                            <div className="mt-2 flex flex-wrap justify-center gap-2">
-                                {['Explain async/await in JS', 'Write a short poem', 'Plan my week'].map((sample) => (
-                                    <button
-                                        key={sample}
-                                        onClick={() => setInput(sample)}
-                                        className="rounded-full border border-border px-3 py-1.5 text-xs transition-colors hover:bg-muted"
-                                    >
-                                        {sample}
-                                    </button>
-                                ))}
+                            <div className="flex min-w-48 flex-1 items-center gap-2">
+                                <span className="whitespace-nowrap text-xs text-muted-foreground">System</span>
+                                <input
+                                    type="text"
+                                    value={systemPrompt}
+                                    onChange={(e) => setSystemPrompt(e.target.value)}
+                                    className="flex-1 rounded-lg border border-primary/30 bg-background/80 px-2 py-1 text-xs outline-none focus:border-primary"
+                                />
                             </div>
                         </div>
                     )}
 
-                    {messages.map((msg) => (
-                        <MessageBubble key={msg.id} msg={msg} />
-                    ))}
-
-                    {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-                        <div className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground">
-                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-border bg-background">
-                                <Bot size={14} />
+                    <div className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
+                        {messages.length === 0 && (
+                            <div className="flex h-full select-none flex-col items-center justify-center gap-4 py-12 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary">
+                                    <Flower2 size={30} />
+                                </div>
+                                <div>
+                                    <p className="font-serif text-2xl font-semibold text-foreground">Welcome to the garden chat</p>
+                                    <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                                        Ask anything. The assistant will respond in a calm, clean workspace with your selected model.
+                                    </p>
+                                </div>
+                                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                                    {['Plan weekend garden tasks', 'Write a calm welcome note', 'Explain async/await in JS'].map((sample) => (
+                                        <button
+                                            key={sample}
+                                            onClick={() => setInput(sample)}
+                                            className="rounded-full border border-primary/25 bg-background/70 px-3 py-1.5 text-xs transition-colors hover:bg-secondary/80"
+                                        >
+                                            {sample}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <Loader2 size={14} className="animate-spin" />
-                            <span>Thinking{isAgentMode ? ' (agent)' : ''}...</span>
-                        </div>
-                    )}
+                        )}
 
-                    {error && (
-                        <div className="mx-4 flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground">
-                            <AlertTriangle size={14} />
-                            <span className="flex-1">{error}</span>
+                        {messages.map((msg) => (
+                            <MessageBubble key={msg.id} msg={msg} />
+                        ))}
+
+                        {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+                            <div className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground">
+                                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary">
+                                    <Bot size={14} />
+                                </div>
+                                <Loader2 size={14} className="animate-spin" />
+                                <span>Thinking{isAgentMode ? ' (agent)' : ''}...</span>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="mx-4 flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-foreground">
+                                <AlertTriangle size={14} />
+                                <span className="flex-1">{error}</span>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-xs text-primary"
+                                    disabled={!lastUserMessage || isLoading}
+                                    onClick={() => sendMessage(lastUserMessage)}
+                                >
+                                    Retry
+                                </Button>
+                            </div>
+                        )}
+
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    <div className="flex-shrink-0 border-t border-primary/20 bg-card/75 px-4 py-3">
+                        <form onSubmit={onSubmit} className="flex items-end gap-2">
+                            <Textarea
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={onKeyDown}
+                                placeholder={isAgentMode ? 'Ask the agent to do something complex...' : 'Ask anything...'}
+                                rows={1}
+                                className="max-h-40 min-h-[44px] flex-1 resize-none rounded-2xl border-primary/30 bg-background/85 pr-4 text-sm"
+                            />
                             <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 text-xs"
-                                disabled={!lastUserMessage || isLoading}
-                                onClick={() => sendMessage(lastUserMessage)}
+                                type="submit"
+                                size="icon"
+                                disabled={isLoading || !input.trim()}
+                                className="h-11 w-11 flex-shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
                             >
-                                Retry
+                                {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                             </Button>
-                        </div>
-                    )}
-
-                    <div ref={messagesEndRef} />
-                </div>
-
-                <div className="flex-shrink-0 border-t border-border px-4 py-3">
-                    <form onSubmit={onSubmit} className="flex items-end gap-2">
-                        <Textarea
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={onKeyDown}
-                            placeholder={isAgentMode ? 'Ask the agent to do something complex...' : 'Ask anything...'}
-                            rows={1}
-                            className="max-h-40 min-h-[44px] flex-1 resize-none rounded-2xl pr-4 text-sm"
-                        />
-                        <Button
-                            type="submit"
-                            size="icon"
-                            disabled={isLoading || !input.trim()}
-                            className="h-11 w-11 flex-shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/90"
-                        >
-                            {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                        </Button>
-                    </form>
-                    <p className="mt-2 text-center text-[10px] text-muted-foreground">
-                        {isAgentMode && <span className="mr-1 text-foreground">Agent.</span>}
-                        Jeff Tune Pro may make mistakes. Verify important info.
-                    </p>
+                        </form>
+                        <p className="mt-2 text-center text-[10px] text-muted-foreground">
+                            {isAgentMode && <span className="mr-1 text-primary">Agent mode.</span>}
+                            Jeff Tune Pro may make mistakes. Verify important info.
+                        </p>
+                    </div>
                 </div>
             </div>
         </TooltipProvider>

@@ -1,35 +1,38 @@
 import type { AIModel } from '@/types';
 
-export const DEFAULT_MODEL = 'LiquidAI/LFM2-24B-A2B';
+export const DEFAULT_MODEL = 'moonshotai/Kimi-K2-Instruct-0905';
+export const ROUTER_FALLBACK_MODEL = DEFAULT_MODEL;
 
 export const AVAILABLE_MODELS: AIModel[] = [
     {
         id: DEFAULT_MODEL,
-        label: 'Liquid LFM2 24B A2B',
-        description: 'Balanced reasoning and chat quality',
+        label: 'Kimi K2 Instruct 0905',
+        description: 'Stable default on Hugging Face Router',
         category: 'general',
     },
     {
-        id: 'moonshotai/Kimi-K2-Instruct-0905:groq',
-        label: 'Kimi K2 Instruct 0905 (Groq)',
-        description: 'Fast and strong for general chat',
+        id: 'LiquidAI/LFM2-24B-A2B',
+        label: 'Liquid LFM2 24B A2B (Unavailable here)',
+        description: 'Not currently available on Hugging Face Router providers',
         category: 'general',
+        isEnabled: false,
+        availabilityNote: 'Use local Transformers runtime instead.',
     },
     {
-        id: 'moonshotai/Kimi-K2.5:novita',
-        label: 'Kimi K2.5 (Novita)',
+        id: 'moonshotai/Kimi-K2.5',
+        label: 'Kimi K2.5',
         description: 'Newer Kimi variant for broad tasks',
         category: 'general',
     },
     {
-        id: 'Qwen/Qwen3.5-27B:novita',
-        label: 'Qwen 3.5 27B (Novita)',
+        id: 'Qwen/Qwen3.5-27B',
+        label: 'Qwen 3.5 27B',
         description: 'Image plus text understanding',
         category: 'general',
     },
     {
-        id: 'meta-llama/Llama-3.1-8B-Instruct:novita',
-        label: 'Llama 3.1 8B Instruct (Novita)',
+        id: 'meta-llama/Llama-3.1-8B-Instruct',
+        label: 'Llama 3.1 8B Instruct',
         description: 'Reliable lightweight instruction model',
         category: 'general',
     },

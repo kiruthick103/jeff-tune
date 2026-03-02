@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { routeModel, DEFAULT_SYSTEM_PROMPT, ENABLED_MODEL_IDS } from '@/lib/ai/models';
+import { routeModel, DEFAULT_SYSTEM_PROMPT, ENABLED_MODEL_IDS, ROUTER_FALLBACK_MODEL } from '@/lib/ai/models';
 
 export const runtime = 'edge';
 
@@ -147,6 +147,11 @@ function extractChunkToken(json: any): string {
     );
 }
 
+function isUnsupportedProviderError(status: number, message: string): boolean {
+    if (status !== 400) return false;
+    return message.toLowerCase().includes('not supported by any provider you have enabled');
+}
+
 export async function POST(req: Request) {
     const clientKey = getClientKey(req);
     const rateLimit = checkRateLimit(clientKey);
@@ -196,20 +201,45 @@ export async function POST(req: Request) {
         }));
         const allMessages = [systemMessage, ...normalizedMessages];
 
-        const hfResponse = await fetch(HF_ROUTER_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: selectedModel,
-                messages: allMessages,
-                stream: true,
-                temperature,
-                max_tokens: maxTokens,
-            }),
-        });
+        const requestModel = async (modelId: string) =>
+            fetch(HF_ROUTER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: allMessages,
+                    stream: true,
+                    temperature,
+                    max_tokens: maxTokens,
+                }),
+            });
+
+        let modelUsed = selectedModel;
+        let hfResponse = await requestModel(modelUsed);
+
+        if (!hfResponse.ok) {
+            const errText = await hfResponse.text();
+            let errMsg = `API Error ${hfResponse.status}`;
+            try { errMsg = JSON.parse(errText)?.error?.message || errMsg; } catch { }
+
+            const shouldFallback = (
+                modelUsed !== ROUTER_FALLBACK_MODEL
+                && ALLOWED_MODELS.has(ROUTER_FALLBACK_MODEL)
+                && isUnsupportedProviderError(hfResponse.status, errMsg)
+            );
+
+            if (shouldFallback) {
+                modelUsed = ROUTER_FALLBACK_MODEL;
+                hfResponse = await requestModel(modelUsed);
+            } else {
+                return new Response(JSON.stringify({ error: errMsg }), {
+                    status: hfResponse.status, headers: { 'Content-Type': 'application/json', ...rateHeaders },
+                });
+            }
+        }
 
         if (!hfResponse.ok) {
             const errText = await hfResponse.text();
@@ -259,7 +289,7 @@ export async function POST(req: Request) {
             headers: {
                 'Content-Type': 'text/event-stream',
                 'Cache-Control': 'no-cache',
-                'X-Model-Used': selectedModel,
+                'X-Model-Used': modelUsed,
                 ...rateHeaders,
             },
         });

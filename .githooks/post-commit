@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Auto-push the current branch after each local commit.
+branch="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
+  exit 0
+fi
+
+git push origin "$branch"
