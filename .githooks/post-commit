@@ -7,4 +7,5 @@ if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
   exit 0
 fi
 
+echo "Auto push: origin/$branch"
 git push origin "$branch"

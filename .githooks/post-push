@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Auto-deploy to Vercel after pushes to main.
+branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+
+if [ "$branch" != "main" ]; then
+  exit 0
+fi
+
+if ! command -v vercel >/dev/null 2>&1; then
+  echo "Auto deploy skipped: vercel CLI not found."
+  exit 0
+fi
+
+echo "Auto deploy: vercel --prod"
+vercel deploy --prod --yes
