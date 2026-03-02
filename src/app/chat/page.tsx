@@ -196,7 +196,7 @@ export default function ChatPage() {
                             <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/35 bg-primary/10 text-primary">
                                 <Flower2 size={16} />
                             </div>
-                            <span className="font-serif text-lg font-semibold tracking-tight text-foreground">Jeff Tune Garden</span>
+                            <span className="font-serif text-lg font-semibold tracking-tight text-foreground">Jeff Tune Pro</span>
                         </div>
                         <div className="flex flex-wrap items-center gap-1.5">
                             <div className="flex items-center gap-2 rounded-full border border-primary/25 bg-secondary/70 px-3 py-1">
@@ -299,13 +299,13 @@ export default function ChatPage() {
                                     <Flower2 size={30} />
                                 </div>
                                 <div>
-                                    <p className="font-serif text-2xl font-semibold text-foreground">Welcome to the garden chat</p>
+                                    <p className="font-serif text-2xl font-semibold text-foreground">Welcome to Jeff Tune</p>
                                     <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                                        Ask anything. The assistant will respond in a calm, clean workspace with your selected model.
+                                        Ask anything. The assistant will respond in a clean workspace with your selected model.
                                     </p>
                                 </div>
                                 <div className="mt-2 flex flex-wrap justify-center gap-2">
-                                    {['Plan weekend garden tasks', 'Write a calm welcome note', 'Explain async/await in JS'].map((sample) => (
+                                    {['Plan my week', 'Write a welcome note', 'Explain async/await in JS'].map((sample) => (
                                         <button
                                             key={sample}
                                             onClick={() => setInput(sample)}

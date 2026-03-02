@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bot, Zap, Shield, Cpu, Flower2 } from 'lucide-react';
+import { Bot, Zap, Shield, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
@@ -10,8 +10,8 @@ export default function HomePage() {
 
             <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-6 py-24 text-center">
                 <div className="garden-panel mb-6 flex items-center gap-2 px-5 py-2 text-sm text-muted-foreground">
-                    <Flower2 size={14} className="text-primary" />
-                    Country Garden Interface
+                    <Zap size={14} className="text-primary" />
+                    Premium Interface
                 </div>
 
                 <h1 className="font-serif text-5xl font-semibold tracking-tight text-foreground sm:text-7xl">
@@ -19,13 +19,13 @@ export default function HomePage() {
                 </h1>
 
                 <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-                    Calm, natural, and elegant AI chat. Choose your model, use Agent Mode, and work in a clean garden-inspired workspace.
+                    Clean and elegant AI chat. Choose your model, use Agent Mode, and work in a refined, focused workspace.
                 </p>
 
                 <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                     <Link href="/chat">
                         <Button size="lg" className="h-12 rounded-full bg-primary px-8 font-medium text-primary-foreground hover:bg-primary/90">
-                            Enter Garden Chat
+                            Start Chat
                         </Button>
                     </Link>
                     <Link href="https://github.com/kiruthick103/jeff-tune" target="_blank">
@@ -53,7 +53,7 @@ export default function HomePage() {
 
                 <div className="mt-10 flex items-center gap-2 rounded-full border border-primary/20 bg-card/60 px-4 py-1.5 text-xs text-muted-foreground">
                     <Zap size={12} className="text-primary" />
-                    Country garden style is active across Home and Chat.
+                    Theme is active across Home and Chat.
                 </div>
             </div>
         </main>
