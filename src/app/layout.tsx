@@ -1,18 +1,17 @@
 import type { Metadata } from 'next';
-import { Cormorant_Garamond, Lora } from 'next/font/google';
+import { JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
-const lora = Lora({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  variable: '--font-lora',
+  variable: '--font-space-grotesk',
 });
 
-const cormorant = Cormorant_Garamond({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-cormorant',
+  variable: '--font-jetbrains-mono',
 });
 
 export const metadata: Metadata = {
@@ -23,8 +22,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${lora.variable} ${cormorant.variable} font-sans`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+      <body className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
           <Analytics />
         </ThemeProvider>
