@@ -39,6 +39,8 @@ npm run dev
 
 ```
 HF_TOKEN=your_hf_token
+SERPAPI_API_KEY=your_serpapi_key              # optional, enables web search context
+SERPAPI_LOCATION=Austin, Texas, United States # optional
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url       # optional
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key     # optional
 NEXT_PUBLIC_APP_URL=https://your-app.vercel.app

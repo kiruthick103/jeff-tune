@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 type Msg = { id: string; role: 'user' | 'assistant'; content: string };
 
 const AUTO_MODEL_VALUE = 'auto';
+const DEFAULT_MAX_TOKENS = 4096;
 
 function ThemeToggle() {
     const { theme, setTheme } = useTheme();
@@ -132,7 +133,7 @@ export default function ChatPage() {
                     temperature,
                     isAgentMode,
                     systemPrompt,
-                    maxTokens: 1024,
+                    maxTokens: DEFAULT_MAX_TOKENS,
                 }),
             });
 

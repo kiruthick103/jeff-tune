@@ -4,13 +4,42 @@ import { routeModel, DEFAULT_SYSTEM_PROMPT, ENABLED_MODEL_IDS, ROUTER_FALLBACK_M
 export const runtime = 'edge';
 
 const HF_ROUTER_URL = 'https://router.huggingface.co/v1/chat/completions';
+const SERP_API_URL = 'https://serpapi.com/search.json';
 const ALLOWED_MODELS = new Set(ENABLED_MODEL_IDS);
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
+const SERP_TIMEOUT_MS = 8_000;
+const MAX_ORGANIC_RESULTS = 4;
+const MAX_NEWS_RESULTS = 3;
+const SEARCH_CONTEXT_MAX_CHARS = 2_500;
+const SEARCH_TRIGGER_REGEX = /\b(latest|current|today|news|recent|price|weather|stock|release|version|update|live)\b/i;
 
 type RateLimitState = {
     count: number;
     resetAt: number;
+};
+
+type SerpEntry = {
+    title?: string;
+    link?: string;
+    snippet?: string;
+    source?: string;
+    date?: string;
+};
+
+type SerpApiResponse = {
+    answer_box?: {
+        title?: string;
+        answer?: string;
+        snippet?: string;
+    };
+    knowledge_graph?: {
+        title?: string;
+        type?: string;
+        description?: string;
+    };
+    organic_results?: SerpEntry[];
+    news_results?: SerpEntry[];
 };
 
 const requestWindow = new Map<string, RateLimitState>();
@@ -78,8 +107,10 @@ const RequestSchema = z.object({
     messages: z.array(MessageSchema).min(1),
     model: z.string().nullable().optional(),
     temperature: z.number().min(0).max(2).optional().default(0.7),
-    maxTokens: z.number().min(100).max(4096).optional().default(1024),
+    maxTokens: z.number().min(100).max(8192).optional().default(4096),
     systemPrompt: z.string().optional(),
+    isAgentMode: z.boolean().optional().default(false),
+    webSearch: z.boolean().optional(),
 });
 
 type ChatMessage = z.infer<typeof MessageSchema>;
@@ -152,6 +183,126 @@ function isUnsupportedProviderError(status: number, message: string): boolean {
     return message.toLowerCase().includes('not supported by any provider you have enabled');
 }
 
+function compactText(value?: string): string {
+    return value?.replace(/\s+/g, ' ').trim() ?? '';
+}
+
+function shouldUseWebSearch(lastMessage: string, isAgentMode: boolean, webSearch?: boolean): boolean {
+    if (typeof webSearch === 'boolean') return webSearch;
+    if (isAgentMode) return true;
+    return SEARCH_TRIGGER_REGEX.test(lastMessage);
+}
+
+function formatSerpEntry(entry: SerpEntry, index: number): string | null {
+    const title = compactText(entry.title);
+    const snippet = compactText(entry.snippet);
+    const link = compactText(entry.link);
+    const source = compactText(entry.source);
+    const date = compactText(entry.date);
+
+    if (!title && !snippet && !link) return null;
+
+    const bits = [
+        title && `${index}. ${title}`,
+        snippet && `Summary: ${snippet}`,
+        (source || date) && `Source: ${[source, date].filter(Boolean).join(' - ')}`,
+        link && `URL: ${link}`,
+    ].filter(Boolean);
+
+    return bits.join('\n');
+}
+
+function buildSearchContext(query: string, searchData: SerpApiResponse): { context: string; resultCount: number } | null {
+    const sections: string[] = [
+        'Web search context (SerpAPI/Google):',
+        `Query: ${compactText(query)}`,
+        'Use this only when relevant. Prefer recent info and include source URLs when making factual claims.',
+    ];
+    let resultCount = 0;
+
+    const answerBox = searchData.answer_box;
+    if (answerBox) {
+        const answer = compactText(answerBox.answer || answerBox.snippet);
+        const title = compactText(answerBox.title);
+        if (answer) {
+            sections.push(`Answer box: ${title ? `${title} - ` : ''}${answer}`);
+            resultCount += 1;
+        }
+    }
+
+    const knowledge = searchData.knowledge_graph;
+    if (knowledge) {
+        const title = compactText(knowledge.title);
+        const kind = compactText(knowledge.type);
+        const description = compactText(knowledge.description);
+        if (title || description) {
+            sections.push(`Knowledge graph: ${[title, kind].filter(Boolean).join(' / ')}${description ? ` - ${description}` : ''}`);
+            resultCount += 1;
+        }
+    }
+
+    const organic = searchData.organic_results?.slice(0, MAX_ORGANIC_RESULTS) ?? [];
+    const organicLines = organic
+        .map((entry, idx) => formatSerpEntry(entry, idx + 1))
+        .filter((value): value is string => value !== null);
+    if (organicLines.length > 0) {
+        sections.push('Top results:');
+        sections.push(organicLines.join('\n\n'));
+        resultCount += organicLines.length;
+    }
+
+    const news = searchData.news_results?.slice(0, MAX_NEWS_RESULTS) ?? [];
+    const newsLines = news
+        .map((entry, idx) => formatSerpEntry(entry, idx + 1))
+        .filter((value): value is string => value !== null);
+    if (newsLines.length > 0) {
+        sections.push('News results:');
+        sections.push(newsLines.join('\n\n'));
+        resultCount += newsLines.length;
+    }
+
+    if (resultCount === 0) return null;
+
+    return {
+        context: sections.join('\n').slice(0, SEARCH_CONTEXT_MAX_CHARS),
+        resultCount,
+    };
+}
+
+async function fetchSerpResults(query: string, apiKey: string): Promise<SerpApiResponse | null> {
+    const cleanQuery = compactText(query);
+    if (!cleanQuery) return null;
+
+    const params = new URLSearchParams({
+        q: cleanQuery,
+        api_key: apiKey,
+        hl: 'en',
+        gl: 'us',
+        google_domain: 'google.com',
+        num: String(MAX_ORGANIC_RESULTS),
+    });
+
+    const location = compactText(process.env.SERPAPI_LOCATION);
+    if (location) params.set('location', location);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), SERP_TIMEOUT_MS);
+
+    try {
+        const response = await fetch(`${SERP_API_URL}?${params.toString()}`, {
+            method: 'GET',
+            signal: controller.signal,
+            cache: 'no-store',
+        });
+        if (!response.ok) return null;
+        return await response.json() as SerpApiResponse;
+    } catch {
+        return null;
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
 export async function POST(req: Request) {
     const clientKey = getClientKey(req);
     const rateLimit = checkRateLimit(clientKey);
@@ -177,7 +328,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { messages, model, temperature, maxTokens, systemPrompt } = RequestSchema.parse(body);
+        const { messages, model, temperature, maxTokens, systemPrompt, isAgentMode, webSearch } = RequestSchema.parse(body);
 
         const lastContent = messages[messages.length - 1]?.content;
         const lastMessage = lastContent ? extractLatestUserText(lastContent) : '';
@@ -189,11 +340,35 @@ export async function POST(req: Request) {
             });
         }
 
+        let webSearchStatus = 'off';
+        let webSearchResults = 0;
+        let webSearchContext = '';
+        if (shouldUseWebSearch(lastMessage, isAgentMode, webSearch)) {
+            const serpApiKey = process.env.SERPAPI_API_KEY;
+            if (!serpApiKey) {
+                webSearchStatus = 'missing-key';
+            } else {
+                const searchData = await fetchSerpResults(lastMessage, serpApiKey);
+                if (!searchData) {
+                    webSearchStatus = 'failed';
+                } else {
+                    const contextData = buildSearchContext(lastMessage, searchData);
+                    if (!contextData) {
+                        webSearchStatus = 'empty';
+                    } else {
+                        webSearchStatus = 'used';
+                        webSearchResults = contextData.resultCount;
+                        webSearchContext = contextData.context;
+                    }
+                }
+            }
+        }
+
         const currentDate = new Date().toISOString().slice(0, 10);
         const temporalContext = `Current date: ${currentDate}. Use this date as today's date when answering time-related questions.`;
         const systemMessage = {
             role: 'system',
-            content: `${systemPrompt || DEFAULT_SYSTEM_PROMPT}\n\n${temporalContext}`,
+            content: `${systemPrompt || DEFAULT_SYSTEM_PROMPT}\n\n${temporalContext}${webSearchContext ? `\n\n${webSearchContext}` : ''}`,
         };
         const normalizedMessages = messages.map((message) => ({
             role: message.role,
@@ -290,6 +465,8 @@ export async function POST(req: Request) {
                 'Content-Type': 'text/event-stream',
                 'Cache-Control': 'no-cache',
                 'X-Model-Used': modelUsed,
+                'X-Web-Search': webSearchStatus,
+                'X-Web-Results': String(webSearchResults),
                 ...rateHeaders,
             },
         });
