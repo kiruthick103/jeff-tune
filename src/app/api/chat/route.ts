@@ -420,37 +420,37 @@ export async function POST(req: Request) {
             });
 
         let modelUsed = selectedModel;
-        let hfResponse = await requestModel(modelUsed);
+        let aiResponse = await requestModel(modelUsed);
 
-        if (!hfResponse.ok) {
-            const errText = await hfResponse.text();
-            const errMsg = parseUpstreamError(hfResponse.status, errText);
+        if (!aiResponse.ok) {
+            const errText = await aiResponse.text();
+            const errMsg = parseUpstreamError(aiResponse.status, errText);
 
             const shouldFallback = (
                 modelUsed !== ROUTER_FALLBACK_MODEL
                 && ALLOWED_MODELS.has(ROUTER_FALLBACK_MODEL)
-                && (isUnsupportedProviderError(hfResponse.status, errMsg) || isCreditDepletionError(hfResponse.status, errMsg))
+                && (isUnsupportedProviderError(aiResponse.status, errMsg) || isCreditDepletionError(aiResponse.status, errMsg))
             );
 
             if (shouldFallback) {
                 modelUsed = ROUTER_FALLBACK_MODEL;
-                hfResponse = await requestModel(modelUsed);
+                aiResponse = await requestModel(modelUsed);
             } else {
                 return new Response(JSON.stringify({ 
                     error: errMsg,
                     fallbackSuggestion: modelUsed !== ROUTER_FALLBACK_MODEL ? 'Try switching to a different model.' : 'Check your API key and quota.',
-                    creditDepleted: isCreditDepletionError(hfResponse.status, errMsg)
+                    creditDepleted: isCreditDepletionError(aiResponse.status, errMsg)
                 }), {
-                    status: hfResponse.status, headers: { 'Content-Type': 'application/json', ...rateHeaders },
+                    status: aiResponse.status, headers: { 'Content-Type': 'application/json', ...rateHeaders },
                 });
             }
         }
 
-        if (!hfResponse.ok) {
-            const errText = await hfResponse.text();
-            const errMsg = parseUpstreamError(hfResponse.status, errText);
+        if (!aiResponse.ok) {
+            const errText = await aiResponse.text();
+            const errMsg = parseUpstreamError(aiResponse.status, errText);
             return new Response(JSON.stringify({ error: errMsg }), {
-                status: hfResponse.status, headers: { 'Content-Type': 'application/json', ...rateHeaders },
+                status: aiResponse.status, headers: { 'Content-Type': 'application/json', ...rateHeaders },
             });
         }
 
@@ -458,7 +458,7 @@ export async function POST(req: Request) {
         const encoder = new TextEncoder();
         const stream = new ReadableStream({
             async start(controller) {
-                const reader = hfResponse.body?.getReader();
+                const reader = aiResponse.body?.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
 
