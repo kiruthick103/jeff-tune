@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bot, Zap, Shield, Cpu, Flower2 } from 'lucide-react';
+import { Bot, Zap, Shield, Cpu, Flower2, Code } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
@@ -19,13 +19,18 @@ export default function HomePage() {
                 </h1>
 
                 <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-                    Calm, natural, and elegant AI chat. Choose your model, use Agent Mode, and work in a clean garden-inspired workspace.
+                    Calm, natural, and elegant AI chat with comprehensive coding features. Choose your model, use Agent Mode, and access advanced development tools in a clean garden-inspired workspace.
                 </p>
 
                 <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                     <Link href="/chat">
                         <Button size="lg" className="h-12 rounded-full bg-primary px-8 font-medium text-primary-foreground hover:bg-primary/90">
                             Enter Garden Chat
+                        </Button>
+                    </Link>
+                    <Link href="/coding">
+                        <Button size="lg" variant="outline" className="h-12 rounded-full border-primary/30 bg-card/50 px-8 text-foreground hover:bg-secondary/70">
+                            Coding Features
                         </Button>
                     </Link>
                     <Link href="https://github.com/kiruthick103/jeff-tune" target="_blank">
@@ -35,9 +40,10 @@ export default function HomePage() {
                     </Link>
                 </div>
 
-                <div className="mt-16 grid w-full max-w-4xl grid-cols-1 gap-5 text-left sm:grid-cols-3">
+                <div className="mt-16 grid w-full max-w-4xl grid-cols-1 gap-5 text-left sm:grid-cols-2 lg:grid-cols-4">
                     {[
                         { icon: <Bot size={18} className="text-primary" />, title: 'Model Garden', desc: 'Select from multiple AI models in one place.' },
+                        { icon: <Code size={18} className="text-primary" />, title: 'Coding Tools', desc: 'Advanced AI-powered development features.' },
                         { icon: <Cpu size={18} className="text-primary" />, title: 'Agent Paths', desc: 'Use Agent Mode for deeper, step-by-step work.' },
                         { icon: <Shield size={18} className="text-primary" />, title: 'Steady Deploy', desc: 'Connected GitHub and Vercel deployment flow.' },
                     ].map((feature) => (

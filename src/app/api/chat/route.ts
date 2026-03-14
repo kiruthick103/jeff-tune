@@ -183,6 +183,24 @@ function isUnsupportedProviderError(status: number, message: string): boolean {
     return message.toLowerCase().includes('not supported by any provider you have enabled');
 }
 
+function parseUpstreamError(status: number, rawText: string): string {
+    const fallback = `API Error ${status}`;
+    try {
+        const parsed = JSON.parse(rawText);
+        const errorValue = (parsed as { error?: unknown }).error;
+        if (typeof errorValue === 'string' && errorValue.trim()) return errorValue;
+        if (errorValue && typeof errorValue === 'object') {
+            const nestedMessage = (errorValue as { message?: unknown }).message;
+            if (typeof nestedMessage === 'string' && nestedMessage.trim()) return nestedMessage;
+        }
+        const message = (parsed as { message?: unknown }).message;
+        if (typeof message === 'string' && message.trim()) return message;
+    } catch {
+        // Ignore JSON parse failures and fall back to generic status message.
+    }
+    return fallback;
+}
+
 function compactText(value?: string): string {
     return value?.replace(/\s+/g, ' ').trim() ?? '';
 }
@@ -397,8 +415,7 @@ export async function POST(req: Request) {
 
         if (!hfResponse.ok) {
             const errText = await hfResponse.text();
-            let errMsg = `API Error ${hfResponse.status}`;
-            try { errMsg = JSON.parse(errText)?.error?.message || errMsg; } catch { }
+            const errMsg = parseUpstreamError(hfResponse.status, errText);
 
             const shouldFallback = (
                 modelUsed !== ROUTER_FALLBACK_MODEL
@@ -418,8 +435,7 @@ export async function POST(req: Request) {
 
         if (!hfResponse.ok) {
             const errText = await hfResponse.text();
-            let errMsg = `API Error ${hfResponse.status}`;
-            try { errMsg = JSON.parse(errText)?.error?.message || errMsg; } catch { }
+            const errMsg = parseUpstreamError(hfResponse.status, errText);
             return new Response(JSON.stringify({ error: errMsg }), {
                 status: hfResponse.status, headers: { 'Content-Type': 'application/json', ...rateHeaders },
             });
