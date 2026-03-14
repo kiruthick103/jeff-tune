@@ -165,7 +165,12 @@ export default function ChatPage() {
             try {
                 const uploadResults = await uploadFiles(uploadedFiles);
                 fileContent = `\n\n[Uploaded Files: ${uploadedFiles.map(f => f.name).join(', ')}]\n\n`;
-                // You can add more detailed file analysis here if needed
+                // Add file analysis details if available
+                if (uploadResults.files && uploadResults.files.length > 0) {
+                    fileContent += uploadResults.files.map((file: any) => 
+                        `\n**${file.name}** (${file.fileType}): ${file.analysis.summary || 'Analysis complete'}`
+                    ).join('\n');
+                }
                 setUploadedFiles([]);
             } catch (error) {
                 setError('Failed to upload files');

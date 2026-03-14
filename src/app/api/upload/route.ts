@@ -643,42 +643,64 @@ export async function POST(req: NextRequest) {
     }
 
     const formData = await req.formData();
-    const file = formData.get('file') as File;
+    
+    // Handle both single file and multiple files
+    const files: File[] = [];
+    
+    // Check for 'files' field (multiple files from chat)
+    const filesField = formData.getAll('files') as File[];
+    if (filesField && filesField.length > 0) {
+      files.push(...filesField);
+    }
+    
+    // Check for 'file' field (single file from upload page)
+    const fileField = formData.get('file') as File;
+    if (fileField && !filesField.length) {
+      files.push(fileField);
+    }
+    
     const fileType = formData.get('fileType') as string;
     const analysis = formData.get('analysis') as string;
     const userId = formData.get('userId') as string;
 
-    if (!file) {
+    if (files.length === 0) {
       return NextResponse.json(
         { error: 'No file provided' },
         { status: 400 }
       );
     }
 
-    // Validate file
-    const detectedFileType = getFileType(file.name, file.type);
-    const finalFileType = (fileType || detectedFileType) as 'image' | 'document' | 'code' | 'audio' | 'video';
-    const validation = validateFile(file, finalFileType);
+    // Process all files
+    const results = [];
+    for (const file of files) {
+      // Validate file
+      const detectedFileType = getFileType(file.name, file.type);
+      const finalFileType = (fileType || detectedFileType) as 'image' | 'document' | 'code' | 'audio' | 'video';
+      const validation = validateFile(file, finalFileType);
 
-    if (!validation.valid) {
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
-    }
+      if (!validation.valid) {
+        return NextResponse.json(
+          { error: `File ${file.name}: ${validation.error}` },
+          { status: 400 }
+        );
+      }
 
-    // Analyze file
-    const result = await analyzeFile(file, finalFileType, analysis);
-
-    return NextResponse.json({
-      success: true,
-      file: {
+      // Analyze file
+      const result = await analyzeFile(file, finalFileType, analysis);
+      
+      results.push({
         name: file.name,
         size: file.size,
         type: file.type,
-        fileType: finalFileType
-      },
-      analysis: result,
+        fileType: finalFileType,
+        analysis: result
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      files: results,
+      count: files.length,
       timestamp: new Date().toISOString()
     });
 
