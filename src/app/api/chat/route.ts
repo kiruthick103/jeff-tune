@@ -3,7 +3,7 @@ import { routeModel, DEFAULT_SYSTEM_PROMPT, ENABLED_MODEL_IDS, ROUTER_FALLBACK_M
 
 export const runtime = 'edge';
 
-const HF_ROUTER_URL = 'https://router.huggingface.co/v1/chat/completions';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const SERP_API_URL = 'https://serpapi.com/search.json';
 const ALLOWED_MODELS = new Set(ENABLED_MODEL_IDS);
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -348,7 +348,7 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.HF_TOKEN;
     if (!apiKey) {
-        return new Response(JSON.stringify({ error: 'HF_TOKEN not configured.' }), {
+        return new Response(JSON.stringify({ error: 'API key not configured.' }), {
             status: 500, headers: { 'Content-Type': 'application/json', ...rateHeaders },
         });
     }
@@ -404,7 +404,7 @@ export async function POST(req: Request) {
         const allMessages = [systemMessage, ...normalizedMessages];
 
         const requestModel = async (modelId: string) =>
-            fetch(HF_ROUTER_URL, {
+            fetch(OPENAI_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

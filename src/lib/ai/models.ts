@@ -1,13 +1,19 @@
 import type { AIModel } from '@/types';
 
-export const DEFAULT_MODEL = 'moonshotai/Kimi-K2-Instruct-0905';
+export const DEFAULT_MODEL = 'gpt-4o-mini';
 export const ROUTER_FALLBACK_MODEL = DEFAULT_MODEL;
 
 export const AVAILABLE_MODELS: AIModel[] = [
     {
         id: DEFAULT_MODEL,
-        label: 'Kimi K2 Instruct 0905',
-        description: 'Stable default on Hugging Face Router',
+        label: 'GPT-4o Mini',
+        description: 'Fast and efficient OpenAI model',
+        category: 'general',
+    },
+    {
+        id: 'gpt-4o',
+        label: 'GPT-4o',
+        description: 'Most capable OpenAI model',
         category: 'general',
     },
 ];
