@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bot, Zap, Shield, Cpu, Flower2, Code } from 'lucide-react';
+import { Bot, Zap, Shield, Cpu, Flower2, Code, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
@@ -19,7 +19,7 @@ export default function HomePage() {
                 </h1>
 
                 <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-                    Calm, natural, and elegant AI chat with comprehensive coding features. Choose your model, use Agent Mode, and access advanced development tools in a clean garden-inspired workspace.
+                    Calm, natural, and elegant AI chat with comprehensive coding features and multi-modal file analysis. Choose your model, use Agent Mode, upload images and documents, and access advanced development tools in a clean garden-inspired workspace.
                 </p>
 
                 <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -33,6 +33,11 @@ export default function HomePage() {
                             Coding Features
                         </Button>
                     </Link>
+                    <Link href="/upload">
+                        <Button size="lg" variant="outline" className="h-12 rounded-full border-primary/30 bg-card/50 px-8 text-foreground hover:bg-secondary/70">
+                            File Upload
+                        </Button>
+                    </Link>
                     <Link href="https://github.com/kiruthick103/jeff-tune" target="_blank">
                         <Button size="lg" variant="outline" className="h-12 rounded-full border-primary/30 bg-card/50 px-8 text-foreground hover:bg-secondary/70">
                             View on GitHub
@@ -44,8 +49,8 @@ export default function HomePage() {
                     {[
                         { icon: <Bot size={18} className="text-primary" />, title: 'Model Garden', desc: 'Select from multiple AI models in one place.' },
                         { icon: <Code size={18} className="text-primary" />, title: 'Coding Tools', desc: 'Advanced AI-powered development features.' },
+                        { icon: <Upload size={18} className="text-primary" />, title: 'File Upload', desc: 'Multi-modal AI analysis for images, documents, and more.' },
                         { icon: <Cpu size={18} className="text-primary" />, title: 'Agent Paths', desc: 'Use Agent Mode for deeper, step-by-step work.' },
-                        { icon: <Shield size={18} className="text-primary" />, title: 'Steady Deploy', desc: 'Connected GitHub and Vercel deployment flow.' },
                     ].map((feature) => (
                         <div key={feature.title} className="garden-panel p-5">
                             <div className="mb-3 inline-flex rounded-full border border-primary/25 bg-primary/10 p-2">

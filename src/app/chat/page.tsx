@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { AVAILABLE_MODELS } from '@/lib/ai/models';
-import { Send, Loader2, Bot, User, Copy, Check, RotateCcw, Zap, Code, Sun, Moon, ChevronDown, ChevronUp, AlertTriangle, Flower2 } from 'lucide-react';
+import { Send, Loader2, Bot, User, Copy, Check, RotateCcw, Zap, Code, Sun, Moon, ChevronDown, ChevronUp, AlertTriangle, Flower2, Paperclip, Image as ImageIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
@@ -92,19 +92,92 @@ export default function ChatPage() {
     const [systemPrompt, setSystemPrompt] = useState('You are Jeff Tune Pro, an advanced AI assistant.');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortRef = useRef<AbortController | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // File upload functions
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(event.target.files || []);
+        setUploadedFiles(prev => [...prev, ...files]);
+    };
+
+    const handleDragOver = (event: React.DragEvent) => {
+        event.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (event: React.DragEvent) => {
+        event.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (event: React.DragEvent) => {
+        event.preventDefault();
+        setIsDragging(false);
+        const files = Array.from(event.dataTransfer.files);
+        setUploadedFiles(prev => [...prev, ...files]);
+    };
+
+    const removeFile = (index: number) => {
+        setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const uploadFiles = async (files: File[]) => {
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('files', file);
+        });
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result;
+            } else {
+                throw new Error('Upload failed');
+            }
+        } catch (error) {
+            console.error('File upload error:', error);
+            throw error;
+        }
+    };
+
     const sendMessage = async (text: string) => {
-        if (!text.trim() || isLoading) return;
+        if (!text.trim() && uploadedFiles.length === 0) return;
 
         setError(null);
-        const userMsg: Msg = { id: Date.now().toString(), role: 'user', content: text };
+        
+        // Handle file uploads first
+        let fileContent = '';
+        if (uploadedFiles.length > 0) {
+            try {
+                const uploadResults = await uploadFiles(uploadedFiles);
+                fileContent = `\n\n[Uploaded Files: ${uploadedFiles.map(f => f.name).join(', ')}]\n\n`;
+                // You can add more detailed file analysis here if needed
+                setUploadedFiles([]);
+            } catch (error) {
+                setError('Failed to upload files');
+                return;
+            }
+        }
+
+        const userMsg: Msg = { 
+            id: Date.now().toString(), 
+            role: 'user', 
+            content: text + fileContent 
+        };
         const updated = [...messages, userMsg];
         setMessages(updated);
         setInput('');
@@ -353,26 +426,126 @@ export default function ChatPage() {
                     </div>
 
                     <div className="flex-shrink-0 border-t border-primary/20 bg-card/75 px-4 py-3">
+                        {/* Uploaded Files Display */}
+                        {uploadedFiles.length > 0 && (
+                            <div className="mb-3 p-2 bg-background/50 rounded-lg border border-primary/20">
+                                <div className="flex flex-wrap gap-2">
+                                    {uploadedFiles.map((file, index) => (
+                                        <div key={index} className="flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full text-sm">
+                                            <ImageIcon className="h-3 w-3" />
+                                            <span className="truncate max-w-32">{file.name}</span>
+                                            <button
+                                                onClick={() => removeFile(index)}
+                                                className="text-primary/70 hover:text-primary"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <form onSubmit={onSubmit} className="flex items-end gap-2">
-                            <Textarea
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={onKeyDown}
-                                placeholder={isAgentMode ? 'Ask the agent to do something complex...' : 'Ask anything...'}
-                                rows={1}
-                                className="max-h-40 min-h-[44px] flex-1 resize-none rounded-2xl border-primary/30 bg-background/85 pr-4 text-sm"
-                            />
+                            {/* File Upload Buttons */}
+                            <div className="flex gap-1">
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-11 w-11 flex-shrink-0 rounded-full border border-primary/30 hover:bg-primary/10"
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                <Paperclip size={18} />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Upload files</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-11 w-11 flex-shrink-0 rounded-full border border-primary/30 hover:bg-primary/10"
+                                                onClick={() => {
+                                                    const input = document.createElement('input');
+                                                    input.type = 'file';
+                                                    input.accept = 'image/*';
+                                                    input.multiple = true;
+                                                    input.onchange = (e: any) => {
+                                                        const files = Array.from(e.target.files || []) as File[];
+                                                        setUploadedFiles(prev => [...prev, ...files]);
+                                                    };
+                                                    input.click();
+                                                }}
+                                            >
+                                                <ImageIcon size={18} />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Upload images</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+
+                            {/* Textarea with drag-and-drop */}
+                            <div className="flex-1 relative">
+                                <Textarea
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={onKeyDown}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                    placeholder={isAgentMode ? 'Ask the agent to do something complex...' : 'Ask anything...'}
+                                    rows={1}
+                                    className={`max-h-40 min-h-[44px] flex-1 resize-none rounded-2xl border-primary/30 bg-background/85 pr-4 text-sm transition-colors ${
+                                        isDragging ? 'border-primary bg-primary/5' : ''
+                                    }`}
+                                />
+                                {isDragging && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-primary/10 rounded-2xl border-2 border-dashed border-primary pointer-events-none">
+                                        <div className="text-center">
+                                            <ImageIcon className="h-8 w-8 mx-auto mb-2 text-primary" />
+                                            <p className="text-sm text-primary">Drop files here</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <Button
                                 type="submit"
                                 size="icon"
-                                disabled={isLoading || !input.trim()}
+                                disabled={isLoading || (!input.trim() && uploadedFiles.length === 0)}
                                 className="h-11 w-11 flex-shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
                             >
                                 {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                             </Button>
                         </form>
+
+                        {/* Hidden file input */}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept="image/*,.pdf,.doc,.docx,.txt,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                        />
+
                         <p className="mt-2 text-center text-[10px] text-muted-foreground">
                             {isAgentMode && <span className="mr-1 text-primary">Agent mode.</span>}
+                            {uploadedFiles.length > 0 && <span className="mr-1 text-primary">{uploadedFiles.length} file(s) attached.</span>}
                             Jeff Tune Pro may make mistakes. Verify important info.
                         </p>
                     </div>
