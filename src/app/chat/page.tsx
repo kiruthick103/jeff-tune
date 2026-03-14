@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { AVAILABLE_MODELS } from '@/lib/ai/models';
+import { AVAILABLE_MODELS, DEFAULT_MODEL } from '@/lib/ai/models';
 import { Send, Loader2, Bot, User, Copy, Check, RotateCcw, Zap, Code, Sun, Moon, ChevronDown, ChevronUp, AlertTriangle, Flower2, Paperclip, Image as ImageIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
@@ -205,6 +205,66 @@ export default function ChatPage() {
 
             if (!res.ok) {
                 const data = await res.json().catch(() => ({ error: res.statusText }));
+                
+                // Handle credit depletion error with automatic model fallback
+                if (data.creditDepleted && data.fallbackSuggestion) {
+                    // Switch to default model automatically
+                    setSelectedModel(DEFAULT_MODEL);
+                    setError(`Credits depleted. Automatically switched to ${DEFAULT_MODEL.split('/')[1]} model. ${data.fallbackSuggestion}`);
+                    
+                    // Retry with default model
+                    const retryRes = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        signal: abortRef.current.signal,
+                        body: JSON.stringify({
+                            messages: updated.map((msg) => ({ role: msg.role, content: msg.content })),
+                            model: DEFAULT_MODEL,
+                            temperature,
+                            isAgentMode,
+                            systemPrompt,
+                            maxTokens: DEFAULT_MAX_TOKENS,
+                        }),
+                    });
+
+                    if (retryRes.ok) {
+                        const reader = retryRes.body?.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+
+                        while (reader) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() || '';
+
+                            for (const line of lines) {
+                                if (line.trim()) {
+                                    try {
+                                        const parsed = JSON.parse(line);
+                                        const token = parsed[0]?.content || parsed[0]?.text || '';
+                                        if (token) {
+                                            setMessages((prev) => {
+                                                const updated = [...prev];
+                                                const last = updated[updated.length - 1];
+                                                if (last?.role === 'assistant') {
+                                                    last.content += token;
+                                                }
+                                                return updated;
+                                            });
+                                        }
+                                    } catch {
+                                        // Ignore JSON parse errors
+                                    }
+                                }
+                            }
+                        }
+                        return;
+                    }
+                }
+                
                 throw new Error(data.error || 'Request failed');
             }
 

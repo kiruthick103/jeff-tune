@@ -183,6 +183,15 @@ function isUnsupportedProviderError(status: number, message: string): boolean {
     return message.toLowerCase().includes('not supported by any provider you have enabled');
 }
 
+function isCreditDepletionError(status: number, message: string): boolean {
+    if (status !== 402 && status !== 429) return false;
+    return message.toLowerCase().includes('depleted') || 
+           message.toLowerCase().includes('credits') || 
+           message.toLowerCase().includes('quota') ||
+           message.toLowerCase().includes('rate limit') ||
+           message.toLowerCase().includes('usage limit');
+}
+
 function parseUpstreamError(status: number, rawText: string): string {
     const fallback = `API Error ${status}`;
     try {
@@ -420,14 +429,18 @@ export async function POST(req: Request) {
             const shouldFallback = (
                 modelUsed !== ROUTER_FALLBACK_MODEL
                 && ALLOWED_MODELS.has(ROUTER_FALLBACK_MODEL)
-                && isUnsupportedProviderError(hfResponse.status, errMsg)
+                && (isUnsupportedProviderError(hfResponse.status, errMsg) || isCreditDepletionError(hfResponse.status, errMsg))
             );
 
             if (shouldFallback) {
                 modelUsed = ROUTER_FALLBACK_MODEL;
                 hfResponse = await requestModel(modelUsed);
             } else {
-                return new Response(JSON.stringify({ error: errMsg }), {
+                return new Response(JSON.stringify({ 
+                    error: errMsg,
+                    fallbackSuggestion: modelUsed !== ROUTER_FALLBACK_MODEL ? 'Try switching to a different model.' : 'Check your API key and quota.',
+                    creditDepleted: isCreditDepletionError(hfResponse.status, errMsg)
+                }), {
                     status: hfResponse.status, headers: { 'Content-Type': 'application/json', ...rateHeaders },
                 });
             }
