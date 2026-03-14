@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { routeModel, DEFAULT_SYSTEM_PROMPT, ENABLED_MODEL_IDS, ROUTER_FALLBACK_MODEL } from '@/lib/ai/models';
+import { routeModel, DEFAULT_SYSTEM_PROMPT, ENABLED_MODEL_IDS, ROUTER_FALLBACK_MODEL, AVAILABLE_MODELS } from '@/lib/ai/models';
 
 export const runtime = 'edge';
 
@@ -345,13 +345,6 @@ export async function POST(req: Request) {
         });
     }
 
-    const apiKey = process.env.HF_TOKEN;
-    if (!apiKey) {
-        return new Response(JSON.stringify({ error: 'OpenRouter API key not configured.' }), {
-            status: 500, headers: { 'Content-Type': 'application/json', ...rateHeaders },
-        });
-    }
-
     try {
         const body = await req.json();
         const { messages, model, temperature, maxTokens, systemPrompt, isAgentMode, webSearch } = RequestSchema.parse(body);
@@ -402,12 +395,48 @@ export async function POST(req: Request) {
         }));
         const allMessages = [systemMessage, ...normalizedMessages];
 
-        const requestModel = async (modelId: string) =>
-            fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const requestModel = async (modelId: string) => {
+        // Find the model to determine the provider
+        const model = AVAILABLE_MODELS.find((m: any) => m.id === modelId);
+        const provider = model?.provider || 'openrouter';
+        
+        if (provider === 'huggingface') {
+            // Use Hugging Face Router API
+            const hfApiKey = process.env.HUGGINGFACE_TOKEN;
+            if (!hfApiKey) {
+                return new Response(JSON.stringify({ error: 'Hugging Face API key not configured.' }), {
+                    status: 500, headers: { 'Content-Type': 'application/json' }
+                });
+            }
+            
+            return fetch('https://router.huggingface.co/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`,
+                    'Authorization': `Bearer ${hfApiKey}`,
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: allMessages,
+                    stream: true,
+                    temperature,
+                    max_tokens: maxTokens,
+                }),
+            });
+        } else {
+            // Use OpenRouter API (default)
+            const openRouterApiKey = process.env.HF_TOKEN;
+            if (!openRouterApiKey) {
+                return new Response(JSON.stringify({ error: 'OpenRouter API key not configured.' }), {
+                    status: 500, headers: { 'Content-Type': 'application/json' }
+                });
+            }
+            
+            return fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${openRouterApiKey}`,
                     'HTTP-Referer': 'https://jeff-tune-1-pro.vercel.app',
                     'X-OpenRouter-Title': 'Jeff AI Pro',
                 },
@@ -419,6 +448,8 @@ export async function POST(req: Request) {
                     max_tokens: maxTokens,
                 }),
             });
+        }
+    };
 
         let modelUsed = selectedModel;
         let aiResponse = await requestModel(modelUsed);

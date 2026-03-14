@@ -22,6 +22,7 @@ export interface AIModel {
     label: string;
     description: string;
     category: 'coding' | 'writing' | 'reasoning' | 'general';
+    provider?: 'openrouter' | 'huggingface';
     isEnabled?: boolean;
     availabilityNote?: string;
 }
