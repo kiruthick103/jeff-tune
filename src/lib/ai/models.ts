@@ -11,23 +11,9 @@ export const AVAILABLE_MODELS: AIModel[] = [
         category: 'general',
     },
     {
-        id: 'LiquidAI/LFM2-24B-A2B',
-        label: 'Liquid LFM2 24B A2B (Unavailable here)',
-        description: 'Not currently available on Hugging Face Router providers',
-        category: 'general',
-        isEnabled: false,
-        availabilityNote: 'Use local Transformers runtime instead.',
-    },
-    {
         id: 'moonshotai/Kimi-K2.5',
         label: 'Kimi K2.5',
         description: 'Newer Kimi variant for broad tasks',
-        category: 'general',
-    },
-    {
-        id: 'Qwen/Qwen3.5-27B',
-        label: 'Qwen 3.5 27B',
-        description: 'Image plus text understanding',
         category: 'general',
     },
     {
@@ -43,12 +29,12 @@ export const AVAILABLE_MODELS: AIModel[] = [
         category: 'general',
     },
     {
-        id: 'unsloth/Qwen3.5-122B-A10B-GGUF',
-        label: 'Qwen 3.5 122B GGUF (Local only)',
-        description: 'GGUF model not available on HF Router chat API',
+        id: 'LiquidAI/LFM2-24B-A2B',
+        label: 'Liquid LFM2 24B A2B (Unavailable)',
+        description: 'Not currently available on Hugging Face Router providers',
         category: 'general',
         isEnabled: false,
-        availabilityNote: 'Local runtime required (llama.cpp/Ollama).',
+        availabilityNote: 'Use local Transformers runtime instead.',
     },
     {
         id: 'openbmb/MiniCPM-o-4_5-gguf',
@@ -99,7 +85,13 @@ export const AVAILABLE_MODELS: AIModel[] = [
         availabilityNote: 'Local runtime required (Transformers).',
     },
     {
-        id: 'humain-ai/ALLaM-7B-Instruct-preview',
+        id: 'Qwen/Qwen3.5-27B',
+        label: 'Qwen 3.5 27B',
+        description: 'Image plus text understanding',
+        category: 'general',
+    },
+    {
+        id: 'human-ai/ALLaM-7B-Instruct-preview',
         label: 'ALLaM 7B Instruct Preview (Local only)',
         description: 'Direct Transformers runtime model, not HF Router chat compatible',
         category: 'general',
