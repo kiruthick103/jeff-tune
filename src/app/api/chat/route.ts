@@ -3,7 +3,6 @@ import { routeModel, DEFAULT_SYSTEM_PROMPT, ENABLED_MODEL_IDS, ROUTER_FALLBACK_M
 
 export const runtime = 'edge';
 
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const SERP_API_URL = 'https://serpapi.com/search.json';
 const ALLOWED_MODELS = new Set(ENABLED_MODEL_IDS);
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -348,7 +347,7 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.HF_TOKEN;
     if (!apiKey) {
-        return new Response(JSON.stringify({ error: 'API key not configured.' }), {
+        return new Response(JSON.stringify({ error: 'OpenRouter API key not configured.' }), {
             status: 500, headers: { 'Content-Type': 'application/json', ...rateHeaders },
         });
     }
@@ -404,11 +403,13 @@ export async function POST(req: Request) {
         const allMessages = [systemMessage, ...normalizedMessages];
 
         const requestModel = async (modelId: string) =>
-            fetch(OPENAI_API_URL, {
+            fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'https://jeff-tune-1-pro.vercel.app',
+                    'X-OpenRouter-Title': 'Jeff AI Pro',
                 },
                 body: JSON.stringify({
                     model: modelId,

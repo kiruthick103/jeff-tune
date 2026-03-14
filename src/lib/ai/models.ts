@@ -1,19 +1,25 @@
 import type { AIModel } from '@/types';
 
-export const DEFAULT_MODEL = 'gpt-4o-mini';
+export const DEFAULT_MODEL = 'openai/gpt-4o-mini';
 export const ROUTER_FALLBACK_MODEL = DEFAULT_MODEL;
 
 export const AVAILABLE_MODELS: AIModel[] = [
     {
         id: DEFAULT_MODEL,
         label: 'GPT-4o Mini',
-        description: 'Fast and efficient OpenAI model',
+        description: 'Fast and efficient OpenAI model via OpenRouter',
         category: 'general',
     },
     {
-        id: 'gpt-4o',
+        id: 'openai/gpt-4o',
         label: 'GPT-4o',
-        description: 'Most capable OpenAI model',
+        description: 'Most capable OpenAI model via OpenRouter',
+        category: 'general',
+    },
+    {
+        id: 'openai/gpt-5.2',
+        label: 'GPT-5.2',
+        description: 'Latest OpenAI model via OpenRouter',
         category: 'general',
     },
 ];
