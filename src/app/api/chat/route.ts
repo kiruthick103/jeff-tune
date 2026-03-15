@@ -403,6 +403,8 @@ export async function POST(req: Request) {
             if (provider === 'huggingface') {
                 // Use Hugging Face Router API
                 const hfApiKey = process.env.HUGGINGFACE_TOKEN;
+                console.log('HF API Key exists:', !!hfApiKey);
+                console.log('HF API Key length:', hfApiKey?.length);
                 if (!hfApiKey) {
                     return new Response(JSON.stringify({ error: 'Hugging Face API key not configured.' }), {
                         status: 500, headers: { 'Content-Type': 'application/json' }
@@ -426,6 +428,8 @@ export async function POST(req: Request) {
             } else {
                 // Use OpenRouter API (default)
                 const openRouterApiKey = process.env.HF_TOKEN;
+                console.log('OpenRouter API Key exists:', !!openRouterApiKey);
+                console.log('OpenRouter API Key length:', openRouterApiKey?.length);
                 if (!openRouterApiKey) {
                     return new Response(JSON.stringify({ error: 'OpenRouter API key not configured.' }), {
                         status: 500, headers: { 'Content-Type': 'application/json' }
